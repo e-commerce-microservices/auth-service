@@ -10,13 +10,13 @@ import (
 )
 
 type jwtManager struct {
-	hmacSecret    string
+	hmacSecret    []byte
 	tokenDuration time.Duration
 }
 
 func newJwtManager(duration time.Duration) jwtManager {
 	return jwtManager{
-		hmacSecret:    os.Getenv("HMAC_SECRET"),
+		hmacSecret:    []byte(os.Getenv("HMAC_SECRET")),
 		tokenDuration: duration,
 	}
 }
@@ -24,9 +24,9 @@ func newJwtManager(duration time.Duration) jwtManager {
 func (jm jwtManager) createAccessToken(claims userClaims) (string, error) {
 	claims.ExpiresAt = time.Now().Add(jm.tokenDuration).Unix()
 
-	token := jwt.NewWithClaims(jm.secret.getMethod(), &claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
 
-	rawToken, err := token.SignedString(jm.secret.getSecretKey())
+	rawToken, err := token.SignedString(jm.hmacSecret)
 	// error when invalid header
 	if err != nil {
 		log.Printf("error occur when create new access token: %v", err)
@@ -34,9 +34,14 @@ func (jm jwtManager) createAccessToken(claims userClaims) (string, error) {
 	return rawToken, err
 }
 
-func (jm JwtManager) parseToken(rawToken string) (*userClaims, error) {
+func (jm jwtManager) parseToken(rawToken string) (*userClaims, error) {
 	token, err := jwt.ParseWithClaims(rawToken, &userClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return jm.secret.getSecretKey(), nil
+		// check algo
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid algo header")
+		}
+
+		return jm.hmacSecret, nil
 	})
 
 	if err != nil {
@@ -51,6 +56,6 @@ func (jm JwtManager) parseToken(rawToken string) (*userClaims, error) {
 	return claims, nil
 }
 
-func (jm JwtManager) createRefreshToken() {
+func (jm jwtManager) createRefreshToken() {
 	panic("not implemented")
 }

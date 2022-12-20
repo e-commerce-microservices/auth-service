@@ -13,12 +13,12 @@ migrateforce:
 	migrate -path db/migration -database "${DB_DSN}" -verbose force ${v}
 
 protogen_auth:
-	protoc --proto_path=proto proto/auth/*.proto \
+	protoc --proto_path=proto proto/auth_service.proto proto/general.proto \
 	--go_out=pb --go_opt=paths=source_relative \
 	--go-grpc_out=pb --go-grpc_opt=paths=source_relative
 
 protogen_user:
-	protoc --proto_path=proto proto/user/*.proto \
+	protoc --proto_path=proto proto/user_service.proto proto/general.proto \
 	--go_out=pb --go_opt=paths=source_relative \
 	--go-grpc_out=pb --go-grpc_opt=paths=source_relative
 
