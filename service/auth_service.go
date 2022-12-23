@@ -99,6 +99,6 @@ func (auth *AuthService) GetUserClaims(ctx context.Context, _ *empty.Empty) (*pb
 
 	return &pb.UserClaimsResponse{
 		Id:       claims.Id,
-		UserRole: *claims.role.Enum(),
+		UserRole: claims.Role,
 	}, nil
 }

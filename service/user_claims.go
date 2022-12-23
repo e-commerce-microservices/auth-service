@@ -7,7 +7,7 @@ import (
 
 type userClaims struct {
 	jwt.StandardClaims
-	role pb.UserRole
+	Role pb.UserRole
 }
 
 func newUserClaims(userID string, role pb.UserRole) userClaims {
@@ -15,5 +15,6 @@ func newUserClaims(userID string, role pb.UserRole) userClaims {
 		StandardClaims: jwt.StandardClaims{
 			Id: userID,
 		},
+		Role: role,
 	}
 }
