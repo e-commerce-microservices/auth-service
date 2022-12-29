@@ -34,7 +34,7 @@ type UserServiceClient interface {
 	UpdateAddress(ctx context.Context, in *UserAddress, opts ...grpc.CallOption) (*GeneralResponse, error)
 	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*GeneralResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*GeneralResponse, error)
-	SupplierRegister(ctx context.Context, in *SupplierRegisterRequest, opts ...grpc.CallOption) (*GeneralResponse, error)
+	SupplierRegister(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GeneralResponse, error)
 	SupplierReport(ctx context.Context, in *SupplierReportRequest, opts ...grpc.CallOption) (*GeneralResponse, error)
 }
 
@@ -145,7 +145,7 @@ func (c *userServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswo
 	return out, nil
 }
 
-func (c *userServiceClient) SupplierRegister(ctx context.Context, in *SupplierRegisterRequest, opts ...grpc.CallOption) (*GeneralResponse, error) {
+func (c *userServiceClient) SupplierRegister(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GeneralResponse, error) {
 	out := new(GeneralResponse)
 	err := c.cc.Invoke(ctx, "/proto.UserService/SupplierRegister", in, out, opts...)
 	if err != nil {
@@ -178,7 +178,7 @@ type UserServiceServer interface {
 	UpdateAddress(context.Context, *UserAddress) (*GeneralResponse, error)
 	UpdatePassword(context.Context, *UpdatePasswordRequest) (*GeneralResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*GeneralResponse, error)
-	SupplierRegister(context.Context, *SupplierRegisterRequest) (*GeneralResponse, error)
+	SupplierRegister(context.Context, *empty.Empty) (*GeneralResponse, error)
 	SupplierReport(context.Context, *SupplierReportRequest) (*GeneralResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -220,7 +220,7 @@ func (UnimplementedUserServiceServer) UpdatePassword(context.Context, *UpdatePas
 func (UnimplementedUserServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*GeneralResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotPassword not implemented")
 }
-func (UnimplementedUserServiceServer) SupplierRegister(context.Context, *SupplierRegisterRequest) (*GeneralResponse, error) {
+func (UnimplementedUserServiceServer) SupplierRegister(context.Context, *empty.Empty) (*GeneralResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SupplierRegister not implemented")
 }
 func (UnimplementedUserServiceServer) SupplierReport(context.Context, *SupplierReportRequest) (*GeneralResponse, error) {
@@ -438,7 +438,7 @@ func _UserService_ForgotPassword_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _UserService_SupplierRegister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SupplierRegisterRequest)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -450,7 +450,7 @@ func _UserService_SupplierRegister_Handler(srv interface{}, ctx context.Context,
 		FullMethod: "/proto.UserService/SupplierRegister",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).SupplierRegister(ctx, req.(*SupplierRegisterRequest))
+		return srv.(UserServiceServer).SupplierRegister(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -657,53 +657,4 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "user_service.proto",
-}
-
-// SupplierServiceClient is the client API for SupplierService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SupplierServiceClient interface {
-}
-
-type supplierServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewSupplierServiceClient(cc grpc.ClientConnInterface) SupplierServiceClient {
-	return &supplierServiceClient{cc}
-}
-
-// SupplierServiceServer is the server API for SupplierService service.
-// All implementations must embed UnimplementedSupplierServiceServer
-// for forward compatibility
-type SupplierServiceServer interface {
-	mustEmbedUnimplementedSupplierServiceServer()
-}
-
-// UnimplementedSupplierServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedSupplierServiceServer struct {
-}
-
-func (UnimplementedSupplierServiceServer) mustEmbedUnimplementedSupplierServiceServer() {}
-
-// UnsafeSupplierServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SupplierServiceServer will
-// result in compilation errors.
-type UnsafeSupplierServiceServer interface {
-	mustEmbedUnimplementedSupplierServiceServer()
-}
-
-func RegisterSupplierServiceServer(s grpc.ServiceRegistrar, srv SupplierServiceServer) {
-	s.RegisterService(&SupplierService_ServiceDesc, srv)
-}
-
-// SupplierService_ServiceDesc is the grpc.ServiceDesc for SupplierService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var SupplierService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.SupplierService",
-	HandlerType: (*SupplierServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "user_service.proto",
 }

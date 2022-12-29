@@ -80,13 +80,14 @@ func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) 
 func (auth *AuthService) GetUserClaims(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
 	log.Println("--> GET: user claims")
 	// parse header
+	// metadata.FromIncomingContext returns the incoming metadata in ctx if it exists
+	// All keys in the returned MD are lowercase
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "can't metadata from header")
+		return nil, status.Errorf(codes.Unauthenticated, "can't read metadata from header")
 	}
 
-	// get authorization header
-	values := md["authorization"]
+	values := md[authorizationHeader]
 	if len(values) == 0 {
 		return nil, status.Error(codes.Unauthenticated, "can't parse authorization header")
 	}
@@ -101,4 +102,46 @@ func (auth *AuthService) GetUserClaims(ctx context.Context, _ *empty.Empty) (*pb
 		Id:       claims.Id,
 		UserRole: claims.Role,
 	}, nil
+}
+
+// CustomerAuthorization return UserClaims for request from Customer
+func (auth *AuthService) CustomerAuthorization(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
+	claims, err := auth.GetUserClaims(ctx, &empty.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.UserRole < pb.UserRole_customer {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	return claims, nil
+}
+
+// SupplierAuthorization return UserClaims for request from Supplier
+func (auth *AuthService) SupplierAuthorization(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
+	claims, err := auth.GetUserClaims(ctx, &empty.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.UserRole < pb.UserRole_supplier {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	return claims, nil
+}
+
+// AdminAuthorization return UserClaims for request from Admin
+func (auth *AuthService) AdminAuthorization(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
+	claims, err := auth.GetUserClaims(ctx, &empty.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.UserRole != pb.UserRole_admin {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	return claims, nil
 }

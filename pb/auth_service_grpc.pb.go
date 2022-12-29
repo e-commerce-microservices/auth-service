@@ -25,7 +25,11 @@ const _ = grpc.SupportPackageIsVersion7
 type AuthServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*GeneralResponse, error)
+	// Deprecated: Do not use.
 	GetUserClaims(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error)
+	CustomerAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error)
+	SupplierAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error)
+	AdminAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error)
 }
 
 type authServiceClient struct {
@@ -54,9 +58,37 @@ func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, o
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *authServiceClient) GetUserClaims(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error) {
 	out := new(UserClaimsResponse)
 	err := c.cc.Invoke(ctx, "/proto.AuthService/GetUserClaims", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) CustomerAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error) {
+	out := new(UserClaimsResponse)
+	err := c.cc.Invoke(ctx, "/proto.AuthService/CustomerAuthorization", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SupplierAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error) {
+	out := new(UserClaimsResponse)
+	err := c.cc.Invoke(ctx, "/proto.AuthService/SupplierAuthorization", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) AdminAuthorization(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UserClaimsResponse, error) {
+	out := new(UserClaimsResponse)
+	err := c.cc.Invoke(ctx, "/proto.AuthService/AdminAuthorization", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +101,11 @@ func (c *authServiceClient) GetUserClaims(ctx context.Context, in *empty.Empty, 
 type AuthServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Register(context.Context, *RegisterRequest) (*GeneralResponse, error)
+	// Deprecated: Do not use.
 	GetUserClaims(context.Context, *empty.Empty) (*UserClaimsResponse, error)
+	CustomerAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error)
+	SupplierAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error)
+	AdminAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -85,6 +121,15 @@ func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest
 }
 func (UnimplementedAuthServiceServer) GetUserClaims(context.Context, *empty.Empty) (*UserClaimsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserClaims not implemented")
+}
+func (UnimplementedAuthServiceServer) CustomerAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CustomerAuthorization not implemented")
+}
+func (UnimplementedAuthServiceServer) SupplierAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SupplierAuthorization not implemented")
+}
+func (UnimplementedAuthServiceServer) AdminAuthorization(context.Context, *empty.Empty) (*UserClaimsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminAuthorization not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -153,6 +198,60 @@ func _AuthService_GetUserClaims_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_CustomerAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CustomerAuthorization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.AuthService/CustomerAuthorization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CustomerAuthorization(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SupplierAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SupplierAuthorization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.AuthService/SupplierAuthorization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SupplierAuthorization(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_AdminAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).AdminAuthorization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.AuthService/AdminAuthorization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).AdminAuthorization(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -171,6 +270,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserClaims",
 			Handler:    _AuthService_GetUserClaims_Handler,
+		},
+		{
+			MethodName: "CustomerAuthorization",
+			Handler:    _AuthService_CustomerAuthorization_Handler,
+		},
+		{
+			MethodName: "SupplierAuthorization",
+			Handler:    _AuthService_SupplierAuthorization_Handler,
+		},
+		{
+			MethodName: "AdminAuthorization",
+			Handler:    _AuthService_AdminAuthorization_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
