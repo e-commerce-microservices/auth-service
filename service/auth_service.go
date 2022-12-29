@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"time"
 
@@ -34,7 +33,6 @@ func NewAuthService(userClient pb.UserServiceClient) *AuthService {
 
 // Login request receive email and password then return access token and refresh token
 func (auth *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	log.Println("--> GET: login")
 	user, err := auth.userClient.GetUserByEmail(ctx, &pb.GetUserByEmailRequest{
 		Email:    req.GetEmail(),
 		Password: req.GetPassword(),
@@ -61,7 +59,6 @@ func (auth *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.L
 
 // Register request receive email, user_name and password then create new user in db
 func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.GeneralResponse, error) {
-	log.Println("--> GET: register")
 	createUserResp, err := auth.userClient.CreateUser(ctx, &pb.CreateUserRequest{
 		Email:    req.Email,
 		UserName: req.Username,
@@ -78,7 +75,6 @@ func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) 
 
 // GetUserClaims return UserClaims for authenticated user
 func (auth *AuthService) GetUserClaims(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
-	log.Println("--> GET: user claims")
 	// parse header
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
