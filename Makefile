@@ -17,8 +17,7 @@ protogen:
 	--go_out=pb --go_opt=paths=source_relative \
 	--go-grpc_out=pb --go-grpc_opt=paths=source_relative
 
-
 sqlcgen:
 	sqlc generate
 
-.PHONY: migratecreate migrateup migratedown migrateforce protogen_auth protogen_user
+.PHONY: migratecreate migrateup migratedown migrateforce protogen
