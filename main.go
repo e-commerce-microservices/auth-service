@@ -17,7 +17,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 
 	// dial user service
-	userServiceConn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	userServiceConn, err := grpc.Dial("user-service:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("can't dial user service: ", err)
 	}
@@ -32,7 +32,7 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// listen and server on tcp
-	listener, err := net.Listen("tcp", "localhost:8081")
+	listener, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		log.Fatal("can't create listener: ", err)
 	}
