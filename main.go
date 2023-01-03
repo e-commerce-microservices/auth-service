@@ -32,7 +32,7 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// listen and server on tcp
-	listener, err := net.Listen("tcp", ":8081")
+	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatal("can't create listener: ", err)
 	}

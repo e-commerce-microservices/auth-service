@@ -141,3 +141,10 @@ func (auth *AuthService) AdminAuthorization(ctx context.Context, _ *empty.Empty)
 
 	return claims, nil
 }
+
+// Ping pong
+func (auth *AuthService) Ping(context.Context, *empty.Empty) (*pb.Pong, error) {
+	return &pb.Pong{
+		Message: "pong",
+	}, nil
+}
