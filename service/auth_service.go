@@ -2,19 +2,29 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/e-commerce-microservices/auth-service/pb"
+	"github.com/e-commerce-microservices/auth-service/repository"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
+type authRepository interface {
+	CreateSession(ctx context.Context, arg repository.CreateSessionParams) error
+	GetSession(ctx context.Context, refreshToken string) (repository.Session, error)
+}
+
 // AuthService represent all authentication and authorization logic
 type AuthService struct {
 	jwt        jwtManager
+	authStore  authRepository
 	userClient pb.UserServiceClient
 	pb.UnimplementedAuthServiceServer
 }
@@ -23,9 +33,10 @@ type AuthService struct {
 //
 // params:
 // + userClient: UserService grpc client  instance
-func NewAuthService(userClient pb.UserServiceClient) *AuthService {
+func NewAuthService(authStore authRepository, userClient pb.UserServiceClient) *AuthService {
 	service := &AuthService{
-		jwt:        newJwtManager(time.Hour),
+		jwt:        newJwtManager(),
+		authStore:  authStore,
 		userClient: userClient,
 	}
 	return service
@@ -38,22 +49,45 @@ func (auth *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.L
 		Password: req.GetPassword(),
 	})
 	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+		return nil, errors.New("Email hoặc password không đúng, hãy thử lại")
 	}
 
 	// create access token
-	accessToken, err := auth.jwt.createAccessToken(newUserClaims(strconv.FormatInt(user.Id, 10), user.Role))
+	userClaims := newUserClaims(strconv.FormatInt(user.Id, 10), user.Role)
+	accessToken, err := auth.jwt.createAccessToken(userClaims)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// create refresh token
+	refreshToken, err := auth.jwt.createRefreshToken(userClaims)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	mD, _ := metadata.FromIncomingContext(ctx)
+	userAgent := ""
+	if len(mD["user-agent"]) > 0 {
+		userAgent = mD["user-agent"][0]
+	}
+
 	// store session
+	err = auth.authStore.CreateSession(ctx, repository.CreateSessionParams{
+		ID:           uuid.New(),
+		UserID:       user.Id,
+		RefreshToken: refreshToken,
+		UserAgent:    userAgent,
+		ClientIp:     "",
+		ExpiresAt:    time.Now().Add(time.Hour * 24 * 30),
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &pb.LoginResponse{
 		AccessToken:  accessToken,
-		RefreshToken: "",
-		Message:      "login successfully",
+		RefreshToken: refreshToken,
+		Message:      "Đăng nhập thành công",
 	}, nil
 }
 
@@ -65,7 +99,7 @@ func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) 
 		Password: req.Password,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, fmt.Errorf("Email %s đã được sử dụng, hãy thử đăng kí bằng email khác", req.GetEmail())
 	}
 
 	return &pb.GeneralResponse{
@@ -140,6 +174,46 @@ func (auth *AuthService) AdminAuthorization(ctx context.Context, _ *empty.Empty)
 	}
 
 	return claims, nil
+}
+
+// Refresh ...
+func (auth *AuthService) Refresh(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.LoginResponse, error) {
+	claims, err := auth.jwt.parseToken(req.RefreshToken)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, err.Error())
+	}
+
+	// check session
+	session, err := auth.authStore.GetSession(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, errors.New("invalid session")
+	}
+	if strconv.FormatInt(session.UserID, 10) != claims.Id {
+		return nil, errors.New("invalid session")
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		return nil, errors.New("expired session")
+	}
+
+	user, err := auth.userClient.GetUserById(ctx, &pb.GetUserByIDRequest{
+		UserId: session.UserID,
+	})
+	if err != nil {
+		return nil, errors.New("invalid session")
+	}
+	// create user access token
+	userClaims := newUserClaims(strconv.FormatInt(user.Id, 10), user.Role)
+	accessToken, err := auth.jwt.createAccessToken(userClaims)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: req.RefreshToken,
+		Message:      "Tạo thành công accessToken",
+	}, nil
 }
 
 // Ping pong

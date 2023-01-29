@@ -10,19 +10,17 @@ import (
 )
 
 type jwtManager struct {
-	hmacSecret    []byte
-	tokenDuration time.Duration
+	hmacSecret []byte
 }
 
-func newJwtManager(duration time.Duration) jwtManager {
+func newJwtManager() jwtManager {
 	return jwtManager{
-		hmacSecret:    []byte(os.Getenv("HMAC_SECRET")),
-		tokenDuration: duration,
+		hmacSecret: []byte(os.Getenv("HMAC_SECRET")),
 	}
 }
 
 func (jm jwtManager) createAccessToken(claims userClaims) (string, error) {
-	claims.ExpiresAt = time.Now().Add(jm.tokenDuration).Unix()
+	claims.ExpiresAt = time.Now().Add(time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
 
@@ -56,6 +54,15 @@ func (jm jwtManager) parseToken(rawToken string) (*userClaims, error) {
 	return claims, nil
 }
 
-func (jm jwtManager) createRefreshToken() {
-	panic("not implemented")
+func (jm jwtManager) createRefreshToken(claims userClaims) (string, error) {
+	claims.ExpiresAt = time.Now().Add(time.Hour * 24 * 30).Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
+
+	rawToken, err := token.SignedString(jm.hmacSecret)
+	// error when invalid header
+	if err != nil {
+		log.Printf("error occur when create new refresh token: %v", err)
+	}
+	return rawToken, err
 }

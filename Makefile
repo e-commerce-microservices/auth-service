@@ -17,11 +17,12 @@ protogen:
 	--go_out=pb --go_opt=paths=source_relative \
 	--go-grpc_out=pb --go-grpc_opt=paths=source_relative
 
+.PHONY: sqlcgen
 sqlcgen:
 	sqlc generate
 
-.PHONY: dockerbp
-dockerbp:
+.PHONY: rebuild
+rebuild:
 	docker build -t ngoctd/ecommerce-auth:latest . && \
 	docker push ngoctd/ecommerce-auth
 
