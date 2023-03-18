@@ -11,6 +11,14 @@ import (
 	"github.com/e-commerce-microservices/auth-service/repository"
 	"github.com/e-commerce-microservices/auth-service/service"
 	"github.com/joho/godotenv"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -20,7 +28,7 @@ import (
 
 func main() {
 	// create grpc server
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()))
 
 	// init user db connection
 	pgDSN := fmt.Sprintf(
@@ -70,4 +78,32 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	tp, tpErr := jaegerTraceProvider()
+	if tpErr != nil {
+		log.Fatal(tpErr)
+	}
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+}
+func jaegerTraceProvider() (*sdktrace.TracerProvider, error) {
+
+	// exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger-all-in-one:14268/api/traces")))
+	// exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger-all-in-one:14268/api/traces")))
+	exp, err := jaeger.New(jaeger.WithAgentEndpoint(jaeger.WithAgentHost("10.3.68.12")))
+
+	if err != nil {
+		log.Println("err: ", err)
+		return nil, err
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("authentication service"),
+			attribute.String("environment", "development"),
+		)),
+		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(1.0)),
+	)
+
+	return tp, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/mail"
 	"strconv"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/e-commerce-microservices/auth-service/repository"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -93,6 +95,17 @@ func (auth *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.L
 
 // Register request receive email, user_name and password then create new user in db
 func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.GeneralResponse, error) {
+	_, err := mail.ParseAddress(req.Email)
+	if err != nil {
+		return nil, status.Errorf(codes.Unknown, "Email không đúng định dạng")
+	}
+	if len(req.Username) == 0 {
+		return nil, status.Errorf(codes.Unknown, "Vui lòng điền username")
+	}
+	if len(req.Password) < 8 {
+		return nil, status.Errorf(codes.Unknown, "Độ dài mật khẩu phải dài hơn 8 kí tự")
+	}
+
 	createUserResp, err := auth.userClient.CreateUser(ctx, &pb.CreateUserRequest{
 		Email:    req.Email,
 		UserName: req.Username,
@@ -107,8 +120,12 @@ func (auth *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) 
 	}, nil
 }
 
+var tracer = otel.Tracer("auth-service")
+
 // GetUserClaims return UserClaims for authenticated user
 func (auth *AuthService) GetUserClaims(ctx context.Context, _ *empty.Empty) (*pb.UserClaimsResponse, error) {
+	ctx, span := tracer.Start(ctx, "getUserClaims")
+	defer span.End()
 	// parse header
 	// metadata.FromIncomingContext returns the incoming metadata in ctx if it exists
 	// All keys in the returned MD are lowercase

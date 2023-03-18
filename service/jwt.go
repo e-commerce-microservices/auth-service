@@ -20,7 +20,7 @@ func newJwtManager() jwtManager {
 }
 
 func (jm jwtManager) createAccessToken(claims userClaims) (string, error) {
-	claims.ExpiresAt = time.Now().Add(time.Hour).Unix()
+	claims.ExpiresAt = time.Now().Add(time.Hour * 30).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
 
